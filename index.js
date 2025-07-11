@@ -33,9 +33,23 @@ async function fetchAllPlayers () {
 }
 
 async function createPlayer (name, breed, imageUrl) {
+    const newPlayer = {
+        name: name,
+        breedreed: breed,
+        imagUrl: imageUrl,
+    }
     try {
         // see "Invite a new player"
         // remember methods and headers
+        
+        const response = await fetch(API_URL + "/Ghassan/players", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(newPlayer),
+      });
+
         return json.data.newPlayer;
     } catch (err) {
         console.error(err.message);
