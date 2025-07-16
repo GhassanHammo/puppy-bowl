@@ -1,47 +1,96 @@
-// === Constants ===
-const BASE = "https://fsa-puppy-bowl.herokuapp.com/api";
-const COHORT = "/"; // Make sure to change this!
-const API = BASE + COHORT;
 
-const API_URL = "https://fsa-puppy-bowl.herokuapp.com/api/2505-FTB-CT-WEB-PT";
-const $form = document.querySelector("form");
-const $main = document.querySelector("main");
-const $loading = document.querySelector("#loading-screen");
-let teams = [];
-
-function showLoading() {
-  $loading.setAttribute("style", "display:flex;");
-}
-
-function hideLoading() {
-  $loading.setAttribute("style", "display:none;");
-}
-
-async function fetchAllPlayers() {
-  let playArr = [];
-  try {
-    // see "Get all players"
-    const response = await fetch(API_URL + "/Ghassan/players");
-    const result = await response.json();
-    playerArr = result.data.players;
-    console.log(playArr);
-  } catch (err) {
-    console.error(err.message);
-  }
-  return playArr;
-}
-
-async function createPlayer(name, breed, imageUrl) {
-  const newPlayer = {
-    name: name,
-    breedreed: breed,
-    imagUrl: imageUrl,
-  };
+const HEADER = "https://fsa-puppy-bowl.herokuapp.com/api/2505-FTB-CT-WEB-PT";
+const NAME = "Ghassan";
+const API = HEADER + NAME;
+let playerArr = [];
+const deltePlayer = async (id) => {
   try {
     // see "Invite a new player"
     // remember methods and headers
 
-    const response = await fetch(API_URL + "/Ghassan/players", {
+    const response = await fetch(API + "/players/" + id, {
+      method: "DELETE",
+      headers: {
+        "content-type": "application/json",
+      },
+    });
+
+    //return json.data.newPlayer;
+  } catch (err) {
+    console.error(err.message);
+  }
+  await GetAllPlayers();
+  start();
+};
+
+const getMoreInfo = async (id) => {
+  try {
+    const response = await fetch(API + "/players/" + id);
+    const result = await response.json();
+    const player = result.data.player;
+    const $playerDetails = document.getElementById("player-details");
+    $playerDetails.innerHTML = `
+      <h2>${player.name}</h2>
+      <p>Breed: ${player.breed}</p>
+      <p>Status: ${player.status}</p>
+      <img src="${player.imageUrl}" width="200" height="200" />
+      <button id="back-btn">Back to List</button>
+    `;
+    const $deletbutton = document.createElement("button");
+    $deletbutton.textContent = "Delet";
+    $playerDetails.append($deletbutton);
+    $deletbutton.addEventListener ("click", () => {
+      deltePlayer(player.id)
+
+    })
+
+    document.getElementById("back-btn").onclick = () => {
+      $playerDetails.innerHTML = ""; // Clear details
+    };
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const $app = document.querySelector("#app");
+const displayResults = (players) => {
+  const $playersList = document.getElementById("players-list");
+  $playersList.innerHTML = ""; // Clear previous list
+  for (const element of players) {
+    const $div = document.createElement("div");
+    const $h2 = document.createElement("h2");
+    $h2.textContent = element.name;
+    const $img = document.createElement("img");
+    $img.src = element.imageUrl;
+    $img.width = 100;
+    $img.height = 100;
+    const $button = document.createElement("button");
+    $button.textContent = "click for more info";
+    $button.addEventListener("click", () => getMoreInfo(element.id));
+
+    $div.append($h2, $img, $button);
+
+    $playersList.append($div);
+  }
+};
+
+const GetAllPlayers = async () => {
+  try {
+    const response = await fetch(API + "/players");
+    const data = await response.json();
+    console.log(data);
+    playerArr = data.players;
+    displayResults(data.data.players);
+  } catch (error) {
+    console.error(error);
+  }
+};
+const createPlayer = async (newPlayer) => {
+  try {
+    // see "Invite a new player"
+    // remember methods and headers
+
+    const response = await fetch(API + "/players", {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -49,158 +98,57 @@ async function createPlayer(name, breed, imageUrl) {
       body: JSON.stringify(newPlayer),
     });
 
-    return json.data.newPlayer;
+    //return json.data.newPlayer;
   } catch (err) {
     console.error(err.message);
   }
-}
+  await GetAllPlayers();
+  start();
+};
 
-async function fetchPlayerById(id) {
-  try {
-    const response = await fetch(API_URL + "/Ghassan/players/" + id);
-    const result = await response.json();
-    const playerObj = result.data.players;
-    console.log(playerObj);
-    // see "Get a player by ID"
-  } catch (err) {
-    console.error(err.message);
-  }
-}
 
-async function removePlayerById(id) {
-  try {
-    const response = await fetch((API_URL + "/Ghassan/players/" + id), 
-    {
-      method: "DELETE",
-      headers: {
-        "content-type": "application/json",
-      },
-    }
-)
-    // see "Remove a player by ID"
-    // remember to set method
-  } catch (err) {
-    console.error(err.message);
-  }
-}
-
-async function fetchAllTeams() {
-  try {
-    // see "Get all teams"
-  } catch (err) {
-    console.error(err.message);
-  }
-}
-
-async function renderAllPlayers() {
-  const playerList = await fetchAllPlayers();
-  // console.log(playerList);
-  const $players = document.createElement("ul");
-  $players.id = "player-list";
-  playerList.forEach((player) => {
-    const $player = document.createElement("li");
-    $player.className = "player-card";
-    $player.innerHTML += `
-        <h2>${player.name}</h2>
-        <p>${player.breed}</p>
-        <img src="${player.imageUrl}" alt="Picture of ${player.name}" />
-        <section class="player-actions">
-            <button class="details-btn">See Details</button>
-            <button class="remove-btn">Remove Player</button>
-        </section>
-        `;
-    $detailsBtn = $player.querySelector(".details-btn");
-    $removeBtn = $player.querySelector(".remove-btn");
-
-    $detailsBtn.addEventListener("click", async () => {
-      showLoading();
-      try {
-        await renderSinglePlayer(player.id);
-      } catch (err) {
-        console.error(err.message);
-      } finally {
-        hideLoading();
-      }
-    });
-
-    $removeBtn.addEventListener("click", async () => {
-      try {
-        const confirmRemove = confirm(
-          `Are you sure you want to remove ${player.name} from the roster?`
-        );
-        if (!confirmRemove) return;
-        showLoading();
-        await removePlayerById(player.id);
-        await renderAllPlayers();
-      } catch (err) {
-        console.error(err.message);
-      } finally {
-        hideLoading();
-      }
-    });
-
-    $players.appendChild($player);
-  });
-
-  $main.innerHTML = "";
-  $main.appendChild($players);
-}
-
-async function renderSinglePlayer(id) {
-  const player = await fetchPlayerById(id);
-
-  $main.innerHTML = `
-    <section id="single-player">
-        <h2>${player.name}/${player.team?.name || "Unassigned"} - ${
-    player.status
-  }</h2>
-        <p>${player.breed}</p>
-        <img src="${player.imageUrl}" alt="Picture of ${player.name}" />
-        <button id="back-btn">Back to List</button>
-    </section>
+const AddPlayer = () => {
+  const $form = document.createElement("form");
+  $form.innerHTML = `
+    <form>
+     <label>Name:</label>
+     <input type="text" id="name"><br><br>
+     <label>Breed:</label>
+     <input type="text" id="breed"><br><br>
+     <input type="submit" value="Add Player">
+    </form>
     `;
 
-  $main.querySelector("#back-btn").addEventListener("click", async () => {
-    showLoading();
-    try {
-      await renderAllPlayers();
-    } catch (err) {
-      console.error(err.message);
-    } finally {
-      hideLoading();
-    }
+  //This eventlistener adds a player to the API and then re-renders the page with the updated verison of the API
+  $form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const newPlayer = {
+      name: $form.querySelector("#name").value,
+      breed: $form.querySelector("#breed").value,
+    };
+    createPlayer(newPlayer);
   });
-}
 
-async function init() {
-  try {
-    await renderAllPlayers();
-    teams = await fetchAllTeams();
-  } catch (err) {
-    console.error(err);
-  } finally {
-    hideLoading();
-  }
-}
+  return $form;
+};
+const start = async () => {
+  $app.innerHTML = `
+    <h1>Puppy Bowl</h1>
+    <main>
+     <section>
+      <h2>Players List</h2>
+      <div id="players-list"></div>
+      <div id="form-container"></div>
+     </section>
+     <section>
+      <h2>Player Details</h2>
+      <div id="player-details"></div>
+     </section>
+    </main>
+  `;
 
-$form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.querySelector("#new-name").value;
-  const breed = document.querySelector("#new-breed").value;
-  const image = document.querySelector("#new-image").value;
-
-  showLoading();
-  try {
-    await createPlayer(name, breed, image);
-    renderAllPlayers();
-  } catch (err) {
-    console.error(err.message);
-  } finally {
-    document.querySelector("#new-name").value = "";
-    document.querySelector("#new-breed").value = "";
-    document.querySelector("#new-image").value = "";
-    hideLoading();
-  }
-});
-
-init();
+  await GetAllPlayers();
+  const $form = AddPlayer();
+  document.getElementById("form-container").appendChild($form);
+};
+start();
